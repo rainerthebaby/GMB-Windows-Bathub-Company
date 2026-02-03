@@ -251,6 +251,10 @@ function addLine(){
 }
 
 async function generatePDF(){
+
+  console.log("PDF started");
+
+
   const { jsPDF } = window.jspdf;
   const pdf = new jsPDF();
 
@@ -414,6 +418,9 @@ y += 12;
   pdf.line(10,280,200,280);
   pdf.text("GMB Window & Bathub Company | +1 (646) 671-6849 | Gemibrand@gmail.com",105,287,{align:"center"});
 
+  console.log("PDF finished");
+
+  
   const blob = pdf.output("blob");
   const file = new File([blob], "GMB_Service_Report.pdf", { type: "application/pdf" });
 
