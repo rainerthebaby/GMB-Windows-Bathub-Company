@@ -85,7 +85,7 @@ button i{margin-right:8px;}
 
 <label style="margin-top:12px;">
    
-  <i class="fa-solid fa-location-dot" style="color:#ef4444"></i>Service Address
+  <i class="fa-solid fa-location-dot" style="color:#ef4444"></i> Service Address
 </label>
 <textarea id="address"></textarea>
 
@@ -305,35 +305,60 @@ async function generatePDF(){
     pdf.addPage();
     y = 20;
   }
+/* ? SERVICE TABLE */
 
-  pdf.setFontSize(13);
-  pdf.text("SERVICE DETAILS",10,y);
-  y += 6;
+/* SERVICE TABLE – corporate excel style */
 
-  pdf.setFontSize(11);
-  pdf.rect(10,y,190,8);
-  pdf.text("Area",15,y+6);
-  pdf.text("Service Performed",100,y+6);
-  y += 8;
+pdf.setFillColor(37,99,235);
+pdf.rect(10, y, 190, 10, "F");
+pdf.setTextColor(255,255,255);
+pdf.setFontSize(12);
+pdf.text("SERVICE DETAILS",105,y+7,{align:"center"});
 
-  const areas = document.querySelectorAll(".area");
-  const services = document.querySelectorAll(".service");
+y += 16;
 
-  for(let i=0;i<areas.length;i++){
-    if(!areas[i].value || !services[i].value) continue;
+pdf.setTextColor(0,0,0);
+pdf.setFontSize(11);
 
-    if(y > 180){
-      pdf.addPage();
-      y = 20;
-    }
+// header row
+pdf.setFillColor(226,232,240);
+pdf.rect(10, y-6, 190, 8, "F");
+pdf.text("Area",20,y);
+pdf.text("Service Performed",110,y);
 
-    pdf.rect(10,y,190,8);
-    pdf.text(areas[i].value,15,y+6);
-    pdf.text(services[i].value,100,y+6);
-    y += 8;
+y += 6;
+pdf.line(10,y,200,y);
+y += 6;
+
+const areas = document.querySelectorAll(".area");
+const services = document.querySelectorAll(".service");
+
+let alt = false;
+
+for(let i=0;i<areas.length;i++){
+  if(!areas[i].value || !services[i].value) continue;
+
+  if(y > 180){
+    pdf.addPage();
+    y = 20;
   }
 
-  y += 12;
+  if(alt){
+    pdf.setFillColor(245,247,250);
+    pdf.rect(10,y-5,190,8,"F");
+  }
+
+  pdf.text(areas[i].value,20,y);
+  pdf.text(services[i].value,110,y);
+
+  pdf.line(10,y+2,200,y+2);
+
+  alt = !alt;
+  y += 8;
+}
+
+y += 12;
+
 
   if(y > 160){
     pdf.addPage();
