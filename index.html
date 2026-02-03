@@ -216,6 +216,7 @@ galleryInput.onchange = e => {
 
 
 function addLine(){
+
   const row = document.createElement("div");
   row.style.display = "flex";
   row.style.gap = "8px";
@@ -238,6 +239,9 @@ function addLine(){
       <option>Bathtub</option>
     </select>
 
+	 <input type="number" class="qty" placeholder="Qty" min="1" value="1" 
+      style="width:70px;padding:10px;border-radius:10px;border:1px solid #e5e7eb;">
+	
     <button class="danger" onclick="this.parentElement.remove()">
       <i class="fa-solid fa-trash"></i>
     </button>
@@ -305,33 +309,50 @@ async function generatePDF(){
     pdf.addPage();
     y = 20;
   }
-/* ? SERVICE TABLE */
+/* ===== SERVICE TABLE ELEGANT ===== */
 
-/* SERVICE TABLE – corporate excel style */
+pdf.setFontSize(13);
+pdf.text("SERVICE DETAILS",10,y);
+y += 8;
 
-pdf.setFillColor(37,99,235);
-pdf.rect(10, y, 190, 10, "F");
+/* Header background */
+pdf.setFillColor(37,99,235); // corporate blue
+pdf.rect(12,y-6,186,10,"F");
+
 pdf.setTextColor(255,255,255);
-pdf.setFontSize(12);
-pdf.text("SERVICE DETAILS",105,y+7,{align:"center"});
-
-y += 16;
-
-pdf.setTextColor(0,0,0);
 pdf.setFontSize(11);
-
-// header row
-pdf.setFillColor(226,232,240);
-pdf.rect(10, y-6, 190, 8, "F");
-pdf.text("Area",20,y);
-pdf.text("Service Performed",110,y);
+pdf.text("Area",15,y);
+pdf.text("Service",85,y);
+pdf.text("Qty",170,y);
 
 y += 6;
-pdf.line(10,y,200,y);
-y += 6;
+pdf.setTextColor(0,0,0);
+
+/* Rows */
+for(let i=0;i<areas.length;i++){
+  if(!areas[i].value || !services[i].value) continue;
+
+  if(y > 180){
+    pdf.addPage();
+    y = 20;
+  }
+
+  pdf.setFillColor(243,244,246); // soft gray
+  pdf.rect(12,y-5,186,8,"F");
+
+  pdf.text(areas[i].value,15,y);
+  pdf.text(services[i].value,85,y);
+  pdf.text(qtys[i].value || "1",170,y);
+
+  y += 10;
+}
+
+y += 8;
+
 
 const areas = document.querySelectorAll(".area");
 const services = document.querySelectorAll(".service");
+const qtys = document.querySelectorAll(".qty");
 
 let alt = false;
 
