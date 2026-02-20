@@ -207,13 +207,18 @@ function clearSig(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 }
 
-cameraInput.onchange = e => {
-  if (!e.target.files.length) return;
+cameraInput.onchange = () => {
 
-  images.push(e.target.files[0]);
+  const files = cameraInput.files;
+  if (!files || !files.length) return;
+
+  images.push(files[0]);
   photoCount.innerText = `${images.length} photos selected`;
 
-  cameraInput.value = ""; // permite tomar otra foto seguida
+  // Reset crítico para Android
+  setTimeout(() => {
+    cameraInput.value = "";
+  }, 0);
 };
 
 galleryInput.onchange = e => {
