@@ -63,6 +63,7 @@ button{
 button i{margin-right:8px;}
 .secondary{background:#64748b;}
 .danger{background:#ef4444;}
+
 .small{text-align:center;font-size:12px;color:#64748b;margin-top:6px;}
 .footer{text-align:center;font-size:13px;color:#475569;margin-top:20px;}
 </style>
@@ -133,102 +134,78 @@ Email: Gemibrand@gmail.com
 </div>
 
 <script>
+/* ===== STATE ===== */
+let images = [];
+
+/* ===== REPORT NUMBER ===== */
 function getReportNumber(){
-  const name = document.getElementById("driver").value.trim();
+  const name = driver.value.trim();
   let initials = "XX";
   if(name){
-    const parts = name.split(" ").filter(p => p.length);
-    initials = parts[0][0].toUpperCase();
-    if(parts.length > 1) initials += parts[1][0].toUpperCase();
+    const p = name.split(" ");
+    initials = p[0][0].toUpperCase() + (p[1]?.[0]?.toUpperCase() || "");
   }
   const d = new Date();
   const ds = d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0");
   const k = `GMB_${ds}_${initials}`;
   let c = localStorage.getItem(k);
-  c = c ? parseInt(c)+1 : 1;
+  c = c ? ++c : 1;
   localStorage.setItem(k,c);
   return `GMB-${ds}-${initials}-${String(c).padStart(3,"0")}`;
 }
 
-/* ===================== SIGNATURE (FIXED) ===================== */
-
+/* ===== SIGNATURE ===== */
 const canvas = document.getElementById("signature");
 const ctx = canvas.getContext("2d");
+let drawing=false;
 
-let drawing = false;
-let savedSignature = null;
-
-function resizeCanvas(preserve = true){
-  if(preserve && canvas.width && canvas.height){
-    savedSignature = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  }
-
-  const ratio = window.devicePixelRatio || 1;
-  const width = canvas.offsetWidth;
-  const height = 180;
-
-  canvas.width = width * ratio;
-  canvas.height = height * ratio;
-
-  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
-
-  if(savedSignature){
-    ctx.putImageData(savedSignature, 0, 0);
-  }
+function resize(){
+  canvas.width = canvas.offsetWidth;
+  canvas.height = 180;
 }
+resize();
+window.onresize = resize;
 
-resizeCanvas();
-window.addEventListener("resize", () => resizeCanvas(true));
-
-canvas.addEventListener("pointerdown", e => {
-  drawing = true;
+canvas.addEventListener("pointerdown",e=>{
+  drawing=true;
   ctx.beginPath();
-  ctx.moveTo(e.offsetX, e.offsetY);
+  ctx.moveTo(e.offsetX,e.offsetY);
 });
-
-canvas.addEventListener("pointermove", e => {
+canvas.addEventListener("pointermove",e=>{
   if(!drawing) return;
-  ctx.lineWidth = 2.5;
-  ctx.lineCap = "round";
-  ctx.strokeStyle = "#2563eb";
-  ctx.lineTo(e.offsetX, e.offsetY);
+  ctx.lineWidth=2.5;
+  ctx.lineCap="round";
+  ctx.strokeStyle="#2563eb";
+  ctx.lineTo(e.offsetX,e.offsetY);
   ctx.stroke();
 });
-
-canvas.addEventListener("pointerup", () => {
-  drawing = false;
-  savedSignature = ctx.getImageData(0, 0, canvas.width, canvas.height);
-});
-
-canvas.addEventListener("pointerleave", () => drawing = false);
+canvas.addEventListener("pointerup",()=>drawing=false);
+canvas.addEventListener("touchmove",e=>e.preventDefault(),{passive:false});
 
 function clearSig(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  savedSignature = null;
 }
 
-/* ===================== RESTO DEL CÓDIGO ORIGINAL ===================== */
-
-let images = [];
-
-cameraInput.onchange = e => {
-  if (!e.target.files.length) return;
-  images.push(e.target.files[0]);
+/* ===== PHOTOS ===== */
+cameraInput.onchange = ()=>{
+  if(!cameraInput.files.length) return;
+  images.push(cameraInput.files[0]);
   photoCount.innerText = `${images.length} photos selected`;
-  cameraInput.value = "";
+  cameraInput.value="";
 };
 
-galleryInput.onchange = e => {
-  for (let file of e.target.files) images.push(file);
+galleryInput.onchange = e=>{
+  for(const f of e.target.files) images.push(f);
   photoCount.innerText = `${images.length} photos selected`;
 };
 
+/* ===== SERVICES ===== */
 function addLine(){
-  const row = document.createElement("div");
-  row.style.display = "flex";
-  row.style.gap = "8px";
-  row.style.marginTop = "8px";
-  row.innerHTML = `
+  const r=document.createElement("div");
+  r.style.display="flex";
+  r.style.gap="8px";
+  r.style.marginTop="8px";
+  r.innerHTML=`
     <select class="area">
       <option value="">Area</option>
       <option>Bathroom</option>
@@ -247,7 +224,65 @@ function addLine(){
     <button class="danger" onclick="this.parentElement.remove()">
       <i class="fa-solid fa-trash"></i>
     </button>`;
-  serviceLines.appendChild(row);
+  serviceLines.appendChild(r);
+}
+
+/* ===== PDF ===== */
+async function generatePDF(){
+  const {jsPDF}=window.jspdf;
+  const pdf=new jsPDF();
+  const now=new Date().toLocaleString();
+  const number=getReportNumber();
+
+  pdf.text("SERVICE REPORT",105,20,{align:"center"});
+
+  let y=86;
+  const a=document.querySelectorAll(".area");
+  const s=document.querySelectorAll(".service");
+  const q=document.querySelectorAll(".qty");
+
+  for(let i=0;i<a.length;i++){
+    if(!a[i].value||!s[i].value) continue;
+    pdf.text(`${a[i].value} - ${s[i].value} (x${q[i].value})`,15,y);
+    y+=8;
+  }
+
+  y+=10;
+  for(const imgFile of images){
+    const img=await read(imgFile);
+    pdf.addImage(img,"JPEG",15,y,80,55);
+    y+=60;
+  }
+
+  pdf.addImage(canvas.toDataURL(),"PNG",15,y,90,40);
+
+  /* ===== SHARE / DOWNLOAD (FIX) ===== */
+  const blob = pdf.output("blob");
+  const url = URL.createObjectURL(blob);
+
+  if (navigator.share) {
+    try {
+      await navigator.share({
+        title: "Service Report",
+        text: "GMB Service Report",
+        files: [new File([blob], "GMB_Service_Report.pdf",{type:"application/pdf"})]
+      });
+    } catch(e){}
+  } else {
+    const a=document.createElement("a");
+    a.href=url;
+    a.download="GMB_Service_Report.pdf";
+    a.click();
+  }
+  URL.revokeObjectURL(url);
+}
+
+function read(f){
+  return new Promise(r=>{
+    const fr=new FileReader();
+    fr.onload=e=>r(e.target.result);
+    fr.readAsDataURL(f);
+  });
 }
 </script>
 
