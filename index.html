@@ -170,20 +170,22 @@ function getReportNumber(){
 const canvas = document.getElementById("signature");
 const ctx = canvas.getContext("2d");
 let drawing = false;
-let images = [];
 
-function resize(){
-  canvas.width = canvas.offsetWidth;
-  canvas.height = 180;
+function initCanvas(){
+  const ratio = window.devicePixelRatio || 1;
+  canvas.width = canvas.offsetWidth * ratio;
+  canvas.height = 180 * ratio;
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
 }
-resize();
-window.onresize = resize;
+
+initCanvas();
 
 canvas.addEventListener("pointerdown", e => {
   drawing = true;
   ctx.beginPath();
   ctx.moveTo(e.offsetX, e.offsetY);
 });
+
 canvas.addEventListener("pointermove", e => {
   if(!drawing) return;
   ctx.lineWidth = 2.5;
@@ -192,7 +194,14 @@ canvas.addEventListener("pointermove", e => {
   ctx.lineTo(e.offsetX, e.offsetY);
   ctx.stroke();
 });
+
 canvas.addEventListener("pointerup", () => drawing = false);
+canvas.addEventListener("pointerleave", () => drawing = false);
+
+// Evita scroll mientras se firma (CLAVE)
+canvas.addEventListener("touchmove", e => {
+  e.preventDefault();
+}, { passive: false });
 
 function clearSig(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
