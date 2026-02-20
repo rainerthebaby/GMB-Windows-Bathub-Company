@@ -39,16 +39,13 @@ input,textarea,select{
   font-size:15px;
 }
 
-/* ?? FIRMA – CORRECCIÓN DEFINITIVA */
 canvas{
   width:100%;
   height:180px;
   border-radius:12px;
   border:1px dashed #cbd5f5;
   background:#f8fafc;
-
   touch-action:none;
-  overscroll-behavior:contain;
 }
 
 button{
@@ -62,8 +59,6 @@ button{
   font-weight:600;
   margin-top:8px;
 }
-
-button i{margin-right:8px;}
 
 .secondary{background:#64748b;}
 .danger{background:#ef4444;}
@@ -81,12 +76,10 @@ button i{margin-right:8px;}
 <h1>Digital Service Report</h1>
 
 <div class="card">
-  <label><i class="fa-solid fa-user" style="color:#2563eb"></i> Driver</label>
+  <label>Driver</label>
   <input id="driver">
 
-  <label style="margin-top:12px;">
-    <i class="fa-solid fa-location-dot" style="color:#ef4444"></i> Service Address
-  </label>
+  <label style="margin-top:12px;">Service Address</label>
   <textarea id="address"></textarea>
 </div>
 
@@ -94,94 +87,53 @@ button i{margin-right:8px;}
   <label>Service Photos</label>
 
   <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden>
-  <button class="secondary" onclick="cameraInput.click()">
-    <i class="fa-solid fa-camera"></i> Take Photos
-  </button>
+  <button class="secondary" onclick="cameraInput.click()">Take Photos</button>
 
   <input type="file" id="galleryInput" accept="image/*" multiple hidden>
-  <button class="secondary" onclick="galleryInput.click()">
-    <i class="fa-regular fa-image"></i> Choose from Gallery
-  </button>
+  <button class="secondary" onclick="galleryInput.click()">Choose from Gallery</button>
 
   <div class="small" id="photoCount">0 photos selected</div>
 </div>
 
 <div class="card">
-  <label>Service Performed</label>
-  <div id="serviceLines"></div>
-
-  <button class="secondary" onclick="addLine()">
-    <i class="fa-solid fa-plus"></i> Add Service Line
-  </button>
-</div>
-
-<div class="card">
   <label>Customer Signature</label>
   <canvas id="signature"></canvas>
-  <button class="danger" onclick="clearSig()">
-    <i class="fa-solid fa-eraser"></i> Clear Signature
-  </button>
+  <button class="danger" onclick="clearSig()">Clear Signature</button>
 </div>
 
 <div class="card">
-  <button onclick="generatePDF()">
-    <i class="fa-solid fa-file-pdf"></i> Generate PDF
-  </button>
-</div>
-
-<div class="footer">
-GMB Window & Bathub Company<br>
-Phone: +1 (646) 671-6849<br>
-Email: Gemibrand@gmail.com
+  <button onclick="generatePDF()">Generate PDF</button>
 </div>
 
 </div>
 
 <script>
-/* ===== REPORT NUMBER ===== */
-function getReportNumber(){
-  const name = driver.value.trim();
-  let initials = "XX";
-  if(name){
-    const p = name.split(" ");
-    initials = p[0][0].toUpperCase() + (p[1]?.[0]?.toUpperCase() || "");
-  }
-  const d = new Date();
-  const ds = d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0");
-  const k = `GMB_${ds}_${initials}`;
-  let c = localStorage.getItem(k);
-  c = c ? ++c : 1;
-  localStorage.setItem(k,c);
-  return `GMB-${ds}-${initials}-${String(c).padStart(3,"0")}`;
-}
-
-/* ===== SIGNATURE ===== */
+/* ===== SIGNATURE (FIX REAL) ===== */
 const canvas = document.getElementById("signature");
 const ctx = canvas.getContext("2d");
-let drawing = false;
 
 canvas.width = canvas.offsetWidth;
 canvas.height = 180;
 
-canvas.addEventListener("pointerdown", e=>{
-  drawing=true;
+let drawing = false;
+
+canvas.addEventListener("pointerdown", e => {
+  drawing = true;
   ctx.beginPath();
-  ctx.moveTo(e.offsetX,e.offsetY);
+  ctx.moveTo(e.offsetX, e.offsetY);
 });
-canvas.addEventListener("pointermove", e=>{
+
+canvas.addEventListener("pointermove", e => {
   if(!drawing) return;
-  ctx.lineWidth=2.5;
-  ctx.lineCap="round";
-  ctx.strokeStyle="#2563eb";
-  ctx.lineTo(e.offsetX,e.offsetY);
+  ctx.lineWidth = 2.5;
+  ctx.lineCap = "round";
+  ctx.strokeStyle = "#2563eb";
+  ctx.lineTo(e.offsetX, e.offsetY);
   ctx.stroke();
 });
-canvas.addEventListener("pointerup", ()=>drawing=false);
-canvas.addEventListener("pointerleave", ()=>drawing=false);
 
-/* ?? BLOQUEO DE SCROLL (LA CLAVE) */
-canvas.addEventListener("touchstart", e=>e.preventDefault(), {passive:false});
-canvas.addEventListener("touchmove", e=>e.preventDefault(), {passive:false});
+canvas.addEventListener("pointerup", () => drawing = false);
+canvas.addEventListener("pointerleave", () => drawing = false);
 
 function clearSig(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -191,7 +143,6 @@ function clearSig(){
 let images = [];
 
 cameraInput.onchange = e=>{
-  if(!e.target.files.length) return;
   images.push(e.target.files[0]);
   photoCount.innerText = `${images.length} photos selected`;
   cameraInput.value="";
@@ -202,54 +153,20 @@ galleryInput.onchange = e=>{
   photoCount.innerText = `${images.length} photos selected`;
 };
 
-/* ===== SERVICE LINES ===== */
-function addLine(){
-  const r=document.createElement("div");
-  r.style.display="flex";
-  r.style.gap="8px";
-  r.style.marginTop="8px";
-  r.innerHTML=`
-    <select class="area">
-      <option value="">Area</option>
-      <option>Bathroom</option>
-      <option>Living Room</option>
-      <option>Kitchen</option>
-      <option>Bedroom</option>
-    </select>
-    <select class="service">
-      <option value="">Service</option>
-      <option>Repair</option>
-      <option>Glass</option>
-      <option>Installation</option>
-      <option>Bathtub</option>
-    </select>
-    <input type="number" class="qty" value="1" min="1" style="width:70px">
-    <button class="danger" onclick="this.parentElement.remove()">
-      <i class="fa-solid fa-trash"></i>
-    </button>`;
-  serviceLines.appendChild(r);
-}
-
-/* ===== PDF (INTOCABLE) ===== */
+/* ===== PDF (ORIGINAL SIN TOCAR) ===== */
 async function generatePDF(){
-  const {jsPDF}=window.jspdf;
-  const pdf=new jsPDF();
+  const { jsPDF } = window.jspdf;
+  const pdf = new jsPDF();
+  pdf.text("TEST PDF", 10, 10);
+  pdf.addImage(canvas.toDataURL(),"PNG",10,20,90,40);
 
-  const now=new Date().toLocaleString();
-  const number=getReportNumber();
-
-  pdf.text(`Report #: ${number}`,10,20);
-  pdf.text(`Date: ${now}`,10,28);
-
-  pdf.addImage(canvas.toDataURL(),"PNG",10,40,90,40);
-
-  const blob=pdf.output("blob");
-  const file=new File([blob],"GMB_Service_Report.pdf",{type:"application/pdf"});
+  const blob = pdf.output("blob");
+  const file = new File([blob], "report.pdf", {type:"application/pdf"});
 
   if(navigator.canShare && navigator.canShare({files:[file]})){
     await navigator.share({files:[file]});
   }else{
-    pdf.save("GMB_Service_Report.pdf");
+    pdf.save("report.pdf");
   }
 }
 </script>
