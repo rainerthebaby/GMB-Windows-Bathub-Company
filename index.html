@@ -20,6 +20,7 @@ body{
 .container{max-width:600px;margin:auto;}
 .logo{display:block;margin:0 auto 10px;max-width:180px;}
 h1{text-align:center;font-size:22px;margin-bottom:20px;}
+
 .card{
   background:#fff;
   border-radius:16px;
@@ -27,6 +28,7 @@ h1{text-align:center;font-size:22px;margin-bottom:20px;}
   margin-bottom:16px;
   box-shadow:0 8px 20px rgba(0,0,0,.08);
 }
+
 label{font-size:14px;font-weight:600;}
 input,textarea,select{
   width:100%;
@@ -36,6 +38,7 @@ input,textarea,select{
   border:1px solid #e5e7eb;
   font-size:15px;
 }
+
 canvas{
   width:100%;
   height:180px;
@@ -44,6 +47,7 @@ canvas{
   background:#f8fafc;
   touch-action:none;
 }
+
 button{
   width:100%;
   padding:14px;
@@ -55,63 +59,77 @@ button{
   font-weight:600;
   margin-top:8px;
 }
+
 button i{margin-right:8px;}
+
 .secondary{background:#64748b;}
 .danger{background:#ef4444;}
+
 .small{text-align:center;font-size:12px;color:#64748b;margin-top:6px;}
 .footer{text-align:center;font-size:13px;color:#475569;margin-top:20px;}
 </style>
 </head>
 
 <body>
+
 <div class="container">
 
 <img src="logo.png" class="logo">
 <h1>Digital Service Report</h1>
 
 <div class="card">
-<label><i class="fa-solid fa-user"></i> Driver</label>
-<input id="driver">
+  <label><i class="fa-solid fa-user" style="color:#2563eb"></i> Driver</label>
+  <input id="driver">
 
-<label style="margin-top:12px;">
-<i class="fa-solid fa-location-dot" style="color:#ef4444"></i> Service Address
-</label>
-<textarea id="address"></textarea>
+  <label style="margin-top:12px;">
+    <i class="fa-solid fa-location-dot" style="color:#ef4444"></i> Service Address
+  </label>
+  <textarea id="address"></textarea>
 </div>
 
 <div class="card">
-<label>Service Photos</label>
+  <label>Service Photos</label>
 
-<input type="file" id="cameraInput" accept="image/*" capture="environment" hidden>
-<button class="secondary" onclick="cameraInput.click()">
-<i class="fa-solid fa-camera"></i> Take Photos
-</button>
+  <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden>
+  <button class="secondary" onclick="cameraInput.click()">
+    <i class="fa-solid fa-camera"></i> Take Photos
+  </button>
 
-<input type="file" id="galleryInput" accept="image/*" multiple hidden>
-<button class="secondary" onclick="galleryInput.click()">
-<i class="fa-regular fa-image"></i> Choose from Gallery
-</button>
+  <input type="file" id="galleryInput" accept="image/*" multiple hidden>
+  <button class="secondary" onclick="galleryInput.click()">
+    <i class="fa-regular fa-image"></i> Choose from Gallery
+  </button>
 
-<div class="small" id="photoCount">0 photos selected</div>
+  <div class="small" id="photoCount">0 photos selected</div>
 </div>
 
 <div class="card">
-<label>Customer Signature</label>
-<canvas id="signature"></canvas>
-<button class="danger" onclick="clearSig()">
-<i class="fa-solid fa-eraser"></i> Clear Signature
-</button>
+  <label>Service Performed</label>
+  <div id="serviceLines"></div>
+
+  <button class="secondary" onclick="addLine()">
+    <i class="fa-solid fa-plus"></i> Add Service Line
+  </button>
 </div>
 
 <div class="card">
-<button onclick="generatePDF()">
-<i class="fa-solid fa-file-pdf"></i> Generate PDF
-</button>
+  <label>Customer Signature</label>
+  <canvas id="signature"></canvas>
+  <button class="danger" onclick="clearSig()">
+    <i class="fa-solid fa-eraser"></i> Clear Signature
+  </button>
+</div>
+
+<div class="card">
+  <button onclick="generatePDF()">
+    <i class="fa-solid fa-file-pdf"></i> Generate PDF
+  </button>
 </div>
 
 <div class="footer">
 GMB Window & Bathub Company<br>
-+1 (646) 671-6849 · Gemibrand@gmail.com
+Phone: +1 (646) 671-6849<br>
+Email: Gemibrand@gmail.com
 </div>
 
 </div>
@@ -120,35 +138,61 @@ GMB Window & Bathub Company<br>
 /* ================= GLOBAL ================= */
 let images = [];
 
-/* ================= SIGNATURE ================= */
+/* ================= REPORT NUMBER ================= */
+function getReportNumber(){
+  const name = driver.value.trim();
+  let initials = "XX";
+  if(name){
+    const p = name.split(" ");
+    initials = p[0][0].toUpperCase() + (p[1]?.[0]?.toUpperCase() || "");
+  }
+  const d = new Date();
+  const ds = d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0");
+  const k = `GMB_${ds}_${initials}`;
+  let c = localStorage.getItem(k);
+  c = c ? ++c : 1;
+  localStorage.setItem(k,c);
+  return `GMB-${ds}-${initials}-${String(c).padStart(3,"0")}`;
+}
+
+/* ================= SIGNATURE (FIX DEFINITIVO) ================= */
 const canvas = document.getElementById("signature");
 const ctx = canvas.getContext("2d");
-let drawing=false;
+let drawing = false;
 
-function resizeCanvas(){
-  const r = window.devicePixelRatio || 1;
-  canvas.width = canvas.offsetWidth * r;
-  canvas.height = 180 * r;
-  ctx.setTransform(r,0,0,r,0,0);
-}
-resizeCanvas();
-window.addEventListener("resize", resizeCanvas);
+// Inicializar SOLO UNA VEZ
+(function initCanvas(){
+  const ratio = window.devicePixelRatio || 1;
+  canvas.width = canvas.offsetWidth * ratio;
+  canvas.height = 180 * ratio;
+  ctx.setTransform(ratio,0,0,ratio,0,0);
+})();
 
-canvas.addEventListener("pointerdown",e=>{
-  drawing=true;
+canvas.addEventListener("pointerdown", e=>{
+  drawing = true;
+  document.body.style.overflow = "hidden";
   ctx.beginPath();
   ctx.moveTo(e.offsetX,e.offsetY);
 });
-canvas.addEventListener("pointermove",e=>{
+
+canvas.addEventListener("pointermove", e=>{
   if(!drawing) return;
-  ctx.lineWidth=2.5;
-  ctx.lineCap="round";
-  ctx.strokeStyle="#2563eb";
+  ctx.lineWidth = 2.5;
+  ctx.lineCap = "round";
+  ctx.strokeStyle = "#2563eb";
   ctx.lineTo(e.offsetX,e.offsetY);
   ctx.stroke();
 });
-canvas.addEventListener("pointerup",()=>drawing=false);
-canvas.addEventListener("pointerleave",()=>drawing=false);
+
+canvas.addEventListener("pointerup", ()=>{
+  drawing = false;
+  document.body.style.overflow = "";
+});
+
+canvas.addEventListener("pointerleave", ()=>{
+  drawing = false;
+  document.body.style.overflow = "";
+});
 
 function clearSig(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -156,62 +200,109 @@ function clearSig(){
 
 /* ================= PHOTOS ================= */
 cameraInput.onchange = ()=>{
-  if(cameraInput.files.length){
-    images.push(cameraInput.files[0]);
-    photoCount.innerText = `${images.length} photos selected`;
-    cameraInput.value="";
-  }
+  if(!cameraInput.files.length) return;
+  images.push(cameraInput.files[0]);
+  photoCount.innerText = `${images.length} photos selected`;
+  cameraInput.value = "";
 };
 
 galleryInput.onchange = ()=>{
-  for(const f of galleryInput.files){
-    images.push(f);
-  }
+  for(const f of galleryInput.files) images.push(f);
   photoCount.innerText = `${images.length} photos selected`;
-  galleryInput.value="";   // ?? FIX GALERÍA
+  galleryInput.value = "";
 };
+
+/* ================= SERVICES ================= */
+function addLine(){
+  const r = document.createElement("div");
+  r.style.display="flex";
+  r.style.gap="8px";
+  r.style.marginTop="8px";
+  r.innerHTML=`
+    <select class="area">
+      <option value="">Area</option>
+      <option>Bathroom</option>
+      <option>Living Room</option>
+      <option>Kitchen</option>
+      <option>Bedroom</option>
+    </select>
+    <select class="service">
+      <option value="">Service</option>
+      <option>Repair</option>
+      <option>Glass</option>
+      <option>Installation</option>
+      <option>Bathtub</option>
+    </select>
+    <input type="number" class="qty" value="1" min="1" style="width:70px">
+    <button class="danger" onclick="this.parentElement.remove()">
+      <i class="fa-solid fa-trash"></i>
+    </button>`;
+  serviceLines.appendChild(r);
+}
 
 /* ================= PDF ================= */
 async function generatePDF(){
-  const { jsPDF } = window.jspdf;
-  const pdf = new jsPDF();
+  const {jsPDF}=window.jspdf;
+  const pdf=new jsPDF();
 
-  pdf.setFontSize(16);
   pdf.text("SERVICE REPORT",105,20,{align:"center"});
 
   let y=30;
-  pdf.setFontSize(12);
+  pdf.text(`Report #: ${getReportNumber()}`,10,y); y+=8;
   pdf.text(`Driver: ${driver.value}`,10,y); y+=8;
-  pdf.text(`Address: ${address.value}`,10,y); y+=10;
+  pdf.text("Address:",10,y); 
+  pdf.text(address.value,30,y,{maxWidth:160});
+  y+=15;
 
-  for(const imgFile of images){
-    const img = await read(imgFile);
-    if(y>240){ pdf.addPage(); y=20; }
-    pdf.addImage(img,"JPEG",15,y,80,55);
-    y+=60;
+  pdf.text("SERVICE DETAILS",10,y); y+=8;
+
+  const a=document.querySelectorAll(".area");
+  const s=document.querySelectorAll(".service");
+  const q=document.querySelectorAll(".qty");
+
+  for(let i=0;i<a.length;i++){
+    if(!a[i].value||!s[i].value) continue;
+    pdf.text(`${a[i].value} - ${s[i].value} (x${q[i].value})`,15,y);
+    y+=7;
   }
 
+  y+=10;
+  pdf.text("EVIDENCE",10,y); y+=6;
+
+  let x=15,c=0;
+  for(const imgFile of images){
+    const img=await read(imgFile);
+    if(y>220){ pdf.addPage(); y=20; x=15; c=0; }
+    pdf.addImage(img,"JPEG",x,y,80,55);
+    if(c===0){x=110;c=1;}else{x=15;c=0;y+=60;}
+  }
+
+  if(y>200){ pdf.addPage(); y=20; }
+  pdf.text("CUSTOMER SIGNATURE",10,y);
+  pdf.addImage(canvas.toDataURL("image/png"),"PNG",10,y+6,90,40);
+
   const blob = pdf.output("blob");
-  const file = new File([blob], "GMB_Service_Report.pdf",{type:"application/pdf"});
+  const file = new File([blob],"GMB_Service_Report.pdf",{type:"application/pdf"});
 
   try{
     if(navigator.canShare && navigator.canShare({files:[file]})){
       await navigator.share({files:[file]});
     }else{
-      throw "share not supported";
+      throw "no-share";
     }
-  }catch(e){
-    pdf.save("GMB_Service_Report.pdf"); // ?? FALLBACK SEGURO
+  }catch{
+    pdf.save("GMB_Service_Report.pdf");
   }
 }
 
-function read(file){
-  return new Promise(res=>{
+function read(f){
+  return new Promise(r=>{
     const fr=new FileReader();
-    fr.onload=e=>res(e.target.result);
-    fr.readAsDataURL(file);
+    fr.onload=e=>r(e.target.result);
+    fr.readAsDataURL(f);
   });
 }
 </script>
+
 </body>
 </html>
