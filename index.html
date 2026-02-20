@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <title>GMB | Digital Service Report</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -14,7 +13,7 @@ body{
   margin:0;
   padding:16px;
   font-family: system-ui, sans-serif;
-  background:#ffffff;
+  background:#fff;
   color:#0f172a;
 }
 .container{max-width:600px;margin:auto;}
@@ -60,113 +59,81 @@ button{
   margin-top:8px;
 }
 
-button i{margin-right:8px;}
-
 .secondary{background:#64748b;}
 .danger{background:#ef4444;}
-
-.small{text-align:center;font-size:12px;color:#64748b;margin-top:6px;}
+.small{text-align:center;font-size:12px;color:#64748b;}
 .footer{text-align:center;font-size:13px;color:#475569;margin-top:20px;}
 </style>
 </head>
 
 <body>
-
 <div class="container">
 
 <img src="logo.png" class="logo">
 <h1>Digital Service Report</h1>
 
 <div class="card">
-  <label><i class="fa-solid fa-user" style="color:#2563eb"></i> Driver</label>
-  <input id="driver">
-
-  <label style="margin-top:12px;">
-    <i class="fa-solid fa-location-dot" style="color:#ef4444"></i> Service Address
-  </label>
-  <textarea id="address"></textarea>
+<label>Driver</label>
+<input id="driver">
+<label style="margin-top:12px;">Service Address</label>
+<textarea id="address"></textarea>
 </div>
 
 <div class="card">
-  <label>Service Photos</label>
-
-  <input type="file" id="cameraInput" accept="image/*" capture="environment" hidden>
-  <button class="secondary" onclick="cameraInput.click()">
-    <i class="fa-solid fa-camera"></i> Take Photos
-  </button>
-
-  <input type="file" id="galleryInput" accept="image/*" multiple hidden>
-  <button class="secondary" onclick="galleryInput.click()">
-    <i class="fa-regular fa-image"></i> Choose from Gallery
-  </button>
-
-  <div class="small" id="photoCount">0 photos selected</div>
+<label>Service Photos</label>
+<input type="file" id="cameraInput" accept="image/*" capture hidden>
+<button class="secondary" onclick="cameraInput.click()">📷 Take Photo</button>
+<input type="file" id="galleryInput" accept="image/*" multiple hidden>
+<button class="secondary" onclick="galleryInput.click()">🖼 Gallery</button>
+<div class="small" id="photoCount">0 photos selected</div>
 </div>
 
 <div class="card">
-  <label>Service Performed</label>
-  <div id="serviceLines"></div>
-
-  <button class="secondary" onclick="addLine()">
-    <i class="fa-solid fa-plus"></i> Add Service Line
-  </button>
+<label>Service Performed</label>
+<div id="serviceLines"></div>
+<button class="secondary" onclick="addLine()">➕ Add Line</button>
 </div>
 
 <div class="card">
-  <label>Customer Signature</label>
-  <canvas id="signature"></canvas>
-  <button class="danger" onclick="clearSig()">
-    <i class="fa-solid fa-eraser"></i> Clear Signature
-  </button>
+<label>Customer Signature</label>
+<canvas id="signature"></canvas>
+<button class="danger" onclick="clearSig()">🧽 Clear</button>
 </div>
 
 <div class="card">
-  <button onclick="generatePDF()">
-    <i class="fa-solid fa-file-pdf"></i> Generate PDF
-  </button>
+<button onclick="generatePDF()">📄 Generate PDF</button>
 </div>
 
 <div class="footer">
-GMB Window & Bathub Company<br>
-Phone: +1 (646) 671-6849<br>
-Email: Gemibrand@gmail.com
+GMB Window & Bathtub Company<br>
++1 (646) 671-6849
 </div>
 
 </div>
 
 <script>
-/* ===== GLOBAL STATE ===== */
-let images = [];   // 🔥 FIX CRÍTICO (NO BORRAR)
+/* ========= GLOBAL ========= */
+let images = [];
 
-/* ===== REPORT NUMBER ===== */
-function getReportNumber(){
-  const name = document.getElementById("driver").value.trim();
-  let initials = "XX";
-  if(name){
-    const p = name.split(" ");
-    initials = p[0][0].toUpperCase() + (p[1]?.[0]?.toUpperCase() || "");
-  }
-  const d = new Date();
-  const ds = d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0");
-  const k = `GMB_${ds}_${initials}`;
-  let c = localStorage.getItem(k);
-  c = c ? ++c : 1;
-  localStorage.setItem(k,c);
-  return `GMB-${ds}-${initials}-${String(c).padStart(3,"0")}`;
-}
-
-/* ===== SIGNATURE ===== */
+/* ========= SIGNATURE (FIX DEFINITIVO) ========= */
 const canvas = document.getElementById("signature");
 const ctx = canvas.getContext("2d");
-let drawing = false;
+let drawing=false;
 
-function initCanvas(){
-  const r = window.devicePixelRatio || 1;
-  canvas.width = canvas.offsetWidth * r;
-  canvas.height = 180 * r;
-  ctx.setTransform(r,0,0,r,0,0);
+function setupCanvas(){
+  const ratio = window.devicePixelRatio || 1;
+  const data = canvas.toDataURL();
+  canvas.width = canvas.offsetWidth * ratio;
+  canvas.height = 180 * ratio;
+  ctx.setTransform(ratio,0,0,ratio,0,0);
+  if(data.length > 10){
+    const img=new Image();
+    img.onload=()=>ctx.drawImage(img,0,0);
+    img.src=data;
+  }
 }
-initCanvas();
+setupCanvas();
+window.addEventListener("resize",setupCanvas);
 
 canvas.addEventListener("pointerdown",e=>{
   drawing=true;
@@ -175,7 +142,7 @@ canvas.addEventListener("pointerdown",e=>{
 });
 canvas.addEventListener("pointermove",e=>{
   if(!drawing) return;
-  ctx.lineWidth=2.5;
+  ctx.lineWidth=3;
   ctx.lineCap="round";
   ctx.strokeStyle="#2563eb";
   ctx.lineTo(e.offsetX,e.offsetY);
@@ -189,90 +156,74 @@ function clearSig(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 }
 
-/* ===== PHOTOS ===== */
-cameraInput.onchange = ()=>{
-  if(!cameraInput.files.length) return;
-  images.push(cameraInput.files[0]);
-  photoCount.innerText = `${images.length} photos selected`;
-  setTimeout(()=>cameraInput.value="",0);
+/* ========= PHOTOS ========= */
+cameraInput.onchange=()=>{
+  if(cameraInput.files[0]) images.push(cameraInput.files[0]);
+  photoCount.innerText=`${images.length} photos selected`;
+  cameraInput.value="";
 };
-
-galleryInput.onchange = e=>{
+galleryInput.onchange=e=>{
   for(const f of e.target.files) images.push(f);
-  photoCount.innerText = `${images.length} photos selected`;
+  photoCount.innerText=`${images.length} photos selected`;
 };
 
-/* ===== SERVICE LINES ===== */
+/* ========= SERVICE LINES ========= */
 function addLine(){
-  const r=document.createElement("div");
-  r.style.display="flex";
-  r.style.gap="8px";
-  r.style.marginTop="8px";
-  r.innerHTML=`
-    <select class="area">
-      <option value="">Area</option>
-      <option>Bathroom</option>
-      <option>Living Room</option>
-      <option>Kitchen</option>
-      <option>Bedroom</option>
-    </select>
-    <select class="service">
-      <option value="">Service</option>
-      <option>Repair</option>
-      <option>Glass</option>
-      <option>Installation</option>
-      <option>Bathtub</option>
-    </select>
-    <input type="number" class="qty" value="1" min="1" style="width:70px">
-    <button class="danger" onclick="this.parentElement.remove()">
-      <i class="fa-solid fa-trash"></i>
-    </button>`;
-  serviceLines.appendChild(r);
+  const d=document.createElement("div");
+  d.style.display="flex";
+  d.style.gap="6px";
+  d.style.marginTop="6px";
+  d.innerHTML=`
+  <select class="area"><option>Area</option><option>Bathroom</option></select>
+  <select class="service"><option>Service</option><option>Repair</option></select>
+  <input class="qty" type="number" value="1" style="width:60px">
+  <button class="danger" onclick="this.parentElement.remove()">🗑</button>`;
+  serviceLines.appendChild(d);
 }
 
-/* ===== PDF ===== */
+/* ========= PDF + SHARE ========= */
 async function generatePDF(){
   const {jsPDF}=window.jspdf;
   const pdf=new jsPDF();
-  let y=86;
+  let y=20;
 
-  pdf.setFontSize(16);
-  pdf.text("SERVICE REPORT",105,20,{align:"center"});
-
-  pdf.setFontSize(13);
-  pdf.text("SERVICE DETAILS",10,y); y+=10;
-
-  const a=document.querySelectorAll(".area");
-  const s=document.querySelectorAll(".service");
-  const q=document.querySelectorAll(".qty");
-
-  for(let i=0;i<a.length;i++){
-    if(!a[i].value||!s[i].value) continue;
-    pdf.text(`${a[i].value} - ${s[i].value} (x${q[i].value})`,15,y);
-    y+=8;
-  }
-
+  pdf.text("SERVICE REPORT",105,y,{align:"center"});
   y+=10;
-  pdf.text("EVIDENCE",10,y); y+=6;
 
-  let x=15,c=0;
-  for(const imgFile of images){
-    const img=await read(imgFile);
-    pdf.addImage(img,"JPEG",x,y,80,55);
-    if(c===0){x=110;c=1;}else{x=15;c=0;y+=60;}
+  pdf.text("Photos:",10,y); y+=6;
+
+  for(const f of images){
+    try{
+      const img=await toBase64(f);
+      pdf.addImage(img,"JPEG",15,y,80,55);
+      y+=60;
+    }catch(e){console.warn("Image skipped",e);}
   }
 
-  pdf.save("GMB_Service_Report.pdf");
+  const sig = canvas.toDataURL("image/png");
+  pdf.text("Signature:",10,y); y+=6;
+  pdf.addImage(sig,"PNG",15,y,80,30);
+
+  const blob = pdf.output("blob");
+
+  if(navigator.share){
+    await navigator.share({
+      files:[new File([blob],"GMB_Report.pdf",{type:"application/pdf"})],
+      title:"Service Report"
+    });
+  }else{
+    pdf.save("GMB_Report.pdf");
+  }
 }
 
-function read(f){
-  return new Promise(r=>{
-    const fr=new FileReader();
-    fr.onload=e=>r(e.target.result);
-    fr.readAsDataURL(f);
+function toBase64(f){
+  return new Promise((res,rej)=>{
+    const r=new FileReader();
+    r.onload=()=>res(r.result);
+    r.onerror=rej;
+    r.readAsDataURL(f);
   });
 }
 </script>
-
 </body>
 </html>
