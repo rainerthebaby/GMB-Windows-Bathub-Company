@@ -45,7 +45,9 @@ canvas{
   border-radius:12px;
   border:1px dashed #cbd5f5;
   background:#f8fafc;
-  touch-action:none;
+
+  touch-action: none;
+  overscroll-behavior: contain;
 }
 
 button{
@@ -135,47 +137,135 @@ Email: Gemibrand@gmail.com
 </div>
 
 <script>
-/* ===== SIGNATURE FIX (ONLY CHANGE) ===== */
+function getReportNumber(){
+  const name = driver.value.trim();
+  let initials = "XX";
+  if(name){
+    const p = name.split(" ");
+    initials = p[0][0].toUpperCase() + (p[1]?.[0]?.toUpperCase() || "");
+  }
+  const d = new Date();
+  const ds = d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0");
+  const k = `GMB_${ds}_${initials}`;
+  let c = localStorage.getItem(k);
+  c = c ? ++c : 1;
+  localStorage.setItem(k,c);
+  return `GMB-${ds}-${initials}-${String(c).padStart(3,"0")}`;
+}
 
+/* ===== SIGNATURE (SOLO FIX DE SCROLL) ===== */
 const canvas = document.getElementById("signature");
 const ctx = canvas.getContext("2d");
 let drawing = false;
+let images = [];
 
-// ?? Inicializar UNA SOLA VEZ
-(function initCanvas(){
-  const ratio = window.devicePixelRatio || 1;
-  const width = canvas.offsetWidth;
-  const height = 180;
+canvas.width = canvas.offsetWidth;
+canvas.height = 180;
 
-  canvas.width = width * ratio;
-  canvas.height = height * ratio;
-  ctx.setTransform(ratio,0,0,ratio,0,0);
-})();
-
-canvas.addEventListener("pointerdown", e => {
+canvas.addEventListener("pointerdown", e=>{
   drawing = true;
   ctx.beginPath();
-  ctx.moveTo(e.offsetX, e.offsetY);
+  ctx.moveTo(e.offsetX,e.offsetY);
 });
-
-canvas.addEventListener("pointermove", e => {
+canvas.addEventListener("pointermove", e=>{
   if(!drawing) return;
-  ctx.lineWidth = 2.5;
-  ctx.lineCap = "round";
-  ctx.strokeStyle = "#2563eb";
-  ctx.lineTo(e.offsetX, e.offsetY);
+  ctx.lineWidth=2.5;
+  ctx.lineCap="round";
+  ctx.strokeStyle="#2563eb";
+  ctx.lineTo(e.offsetX,e.offsetY);
   ctx.stroke();
 });
+canvas.addEventListener("pointerup", ()=>drawing=false);
+canvas.addEventListener("pointerleave", ()=>drawing=false);
 
-canvas.addEventListener("pointerup", () => drawing = false);
-canvas.addEventListener("pointerleave", () => drawing = false);
+canvas.addEventListener("touchstart", e=>e.preventDefault(), {passive:false});
+canvas.addEventListener("touchmove", e=>e.preventDefault(), {passive:false});
 
 function clearSig(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 }
 
-/* ===== RESTO DEL SCRIPT ORIGINAL (SIN CAMBIOS) ===== */
-/* TODO: tu código original continúa igual */
+/* ===== PHOTOS ===== */
+cameraInput.onchange = ()=>{
+  if(!cameraInput.files.length) return;
+  images.push(cameraInput.files[0]);
+  photoCount.innerText = `${images.length} photos selected`;
+  cameraInput.value="";
+};
+galleryInput.onchange = e=>{
+  for(const f of e.target.files) images.push(f);
+  photoCount.innerText = `${images.length} photos selected`;
+};
+
+/* ===== SERVICE LINES ===== */
+function addLine(){
+  const r=document.createElement("div");
+  r.style.display="flex";
+  r.style.gap="8px";
+  r.style.marginTop="8px";
+  r.innerHTML=`
+    <select class="area">
+      <option value="">Area</option>
+      <option>Bathroom</option>
+      <option>Living Room</option>
+      <option>Kitchen</option>
+      <option>Bedroom</option>
+    </select>
+    <select class="service">
+      <option value="">Service</option>
+      <option>Repair</option>
+      <option>Glass</option>
+      <option>Installation</option>
+      <option>Bathtub</option>
+    </select>
+    <input type="number" class="qty" value="1" min="1" style="width:70px">
+    <button class="danger" onclick="this.parentElement.remove()">
+      <i class="fa-solid fa-trash"></i>
+    </button>`;
+  serviceLines.appendChild(r);
+}
+
+/* ===== PDF (ORIGINAL INTACTO) ===== */
+async function generatePDF(){
+  const {jsPDF}=window.jspdf;
+  const pdf=new jsPDF();
+  const now=new Date().toLocaleString();
+  const number=getReportNumber();
+
+  pdf.addImage("logo.png","PNG",15,10,40,20);
+  pdf.text("SERVICE REPORT",105,26,{align:"center"});
+  pdf.text(`Report #: ${number}`,15,46);
+  pdf.text(`Date: ${now}`,15,54);
+
+  let y=86;
+  pdf.text("EVIDENCE",10,y); y+=6;
+
+  let x=15,c=0;
+  for(const imgFile of images){
+    const img=await read(imgFile);
+    pdf.addImage(img,"PNG",x,y,80,55);
+    if(c===0){x=110;c=1;}else{x=15;c=0;y+=60;}
+  }
+
+  pdf.addImage(canvas.toDataURL(),"PNG",15,y+20,90,40);
+
+  const blob=pdf.output("blob");
+  const file=new File([blob],"GMB_Service_Report.pdf",{type:"application/pdf"});
+
+  if(navigator.canShare && navigator.canShare({files:[file]})){
+    await navigator.share({files:[file]});
+  }else{
+    pdf.save("GMB_Service_Report.pdf");
+  }
+}
+
+function read(f){
+  return new Promise(r=>{
+    const fr=new FileReader();
+    fr.onload=e=>r(e.target.result);
+    fr.readAsDataURL(f);
+  });
+}
 </script>
 
 </body>
