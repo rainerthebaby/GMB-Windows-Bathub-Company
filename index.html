@@ -172,9 +172,17 @@ let drawing = false;
 let images = [];
 
 function resize(){
+  const data = canvas.toDataURL(); // guardar firma
+
   canvas.width = canvas.offsetWidth;
   canvas.height = 180;
-}
+
+  if (data !== "data:,") {
+    const img = new Image();
+    img.onload = () => ctx.drawImage(img, 0, 0);
+    img.src = data;
+  }
+
 resize();
 window.onresize = resize;
 
